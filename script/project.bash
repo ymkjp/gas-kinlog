@@ -5,8 +5,6 @@ project () {
 
   start () {
     export NODE_ENV=development
-    export APP_EMAIL="${APP_EMAIL:=__YOURS_HERE__}"
-    export APP_PASSWORD="${APP_PASSWORD:=__YOURS_HERE__}"
     yarn start
   }
 

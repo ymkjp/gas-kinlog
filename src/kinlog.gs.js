@@ -1,8 +1,9 @@
 /**
- * Kindle
+ * Register Kindle books to booklog.jp
  */
 const LABEL_ENQ = '#GAS/kinlog-enq'
 const LABEL_DEQ = '#GAS/kinlog-deq'
+const MAX_QUEUE = 30
 
 /**
  * Walk through the target emails
@@ -12,7 +13,7 @@ const LABEL_DEQ = '#GAS/kinlog-deq'
 const main = () => {
   const targetLabel = GmailApp.getUserLabelByName(LABEL_ENQ)
   const notifiedLabel = GmailApp.getUserLabelByName(LABEL_DEQ)
-  const threads = targetLabel.getThreads().reverse()
+  const threads = targetLabel.getThreads(0, MAX_QUEUE).reverse()
 
   if (threads <= 0) {
     Logger.log('Aborting... The queue is empty.')
@@ -43,8 +44,9 @@ const flatten = (list) => {
   return [].concat.apply([], list)
 }
 
+const REGEXP_ASIN = /dp%2F.{10}/g
 const extractAsins = (body) => {
-  const list = body.match(/dp%2F.{10}/g)
+  const list = body.match(REGEXP_ASIN)
   if (list === null) {
     return []
   }

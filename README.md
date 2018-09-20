@@ -14,14 +14,13 @@
 Run the command below:
 
 ```bash
-./pj start
+yarn start
 ```
 
 For the release:
 
 ```bash
-export FIREBASE_API_KEY="__YOURS_HERE__"
-./pj release
+yarn run build
 ```
 
 Then you will get the js file in `./dist`.
@@ -29,8 +28,10 @@ Then you will get the js file in `./dist`.
 ## Project Links
 
 * Upstream work: [trunk](https://github.com/announce/gas-kinlog/compare/master...ymkjp:master)
-* Dashboard: TBD
+* Dashboard: [Apps Script](https://script.google.com/home)
+  * Trigger every 10 minutes
 
 ## Documents
 
-TBD
+* [Quotas for Google Services](https://developers.google.com/apps-script/guides/services/quotas)
+  * Execution timeout is 6 minutes
