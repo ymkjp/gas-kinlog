@@ -1,0 +1,59 @@
+{
+  "name": "gas-kinlog",
+  "version": "1.0.0",
+  "description": "A GAS to post your Kindle books to booklog.jp",
+  "main": "dist/kinlog.gs.js",
+  "scripts": {
+    "test": "npm-run-all lint build:**",
+    "lint": "npm-run-all lint:**",
+    "lint:js": "standard --fix",
+    "lint:md": "markdownlint README.md",
+    "lint:shell": "docker run --rm -v $PWD:/mnt koalaman/shellcheck:v0.5.0 --exclude=SC1090 script/*.bash",
+    "watch": "npm-run-all --parallel watch:**",
+    "watch:js": "onchange  --delay 1000 '*.json' 'src/*' -- npm-run-all lint:js build:js notify",
+    "watch:shell": "onchange  --delay 1000 'script/**/*.*sh' -- npm-run-all lint:shell notify",
+    "watch:md": "onchange  --delay 1000 '*.md' -- npm-run-all lint:md notify",
+    "notify": "./script/notify.bash $?",
+    "build": "npm-run-all build:**",
+    "build:js": "babel src/ -d dist/",
+    "prestart": "yarn install",
+    "start": "npm-run-all test watch"
+  },
+  "repository": "git+ssh://git@github.com/ymkjp/mlit-mm-slack-gas.git",
+  "keywords": [
+    "google-apps-script",
+    "mlit",
+    "slack",
+    "gmail"
+  ],
+  "author": "@ymkjp",
+  "license": "MIT",
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-core": "^6.26.3",
+    "babel-eslint": "^9.0.0",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-flow": "^6.23.0",
+    "eslint-plugin-flowtype": "^2.50.1",
+    "flow-bin": "^0.81.0",
+    "markdownlint-cli": "^0.13.0",
+    "npm-run-all": "^4.1.3",
+    "onchange": "^4.0.0",
+    "standard": "^11.0.1"
+  },
+  "standard": {
+    "parser": "babel-eslint",
+    "plugins": [
+      "flowtype"
+    ],
+    "globals": [
+      "ScriptApp",
+      "Logger",
+      "Utilities",
+      "UrlFetchApp",
+      "MailApp",
+      "GmailApp"
+    ]
+  }
+}
