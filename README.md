@@ -28,7 +28,8 @@ Then you will get the js file in `./dist`.
 
 ## Project Links
 
-TBD
+* Upstream work: [trunk](https://github.com/announce/gas-kinlog/compare/master...ymkjp:master)
+* Dashboard: TBD
 
 ## Documents
 

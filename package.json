@@ -51,6 +51,7 @@
       "ScriptApp",
       "Logger",
       "Utilities",
+      "PropertiesService",
       "UrlFetchApp",
       "MailApp",
       "GmailApp"

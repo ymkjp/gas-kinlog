@@ -1,9 +1,8 @@
 /**
- * MLIT mail magazine
-*/
-const WEBHOOK_URL = 'https://hooks.slack.com/services/__YOUR__PATH__'
-const LABEL_ENQ = '#GAS/mlit-mm-enq'
-const LABEL_DEQ = '#GAS/mlit-mm-deq'
+ * Kindle
+ */
+const LABEL_ENQ = '#GAS/kinlog-enq'
+const LABEL_DEQ = '#GAS/kinlog-deq'
 
 /**
  * Walk through the target emails
@@ -15,67 +14,87 @@ const main = () => {
   const notifiedLabel = GmailApp.getUserLabelByName(LABEL_DEQ)
   const threads = targetLabel.getThreads().reverse()
 
-  for (const i in threads) {
-    const thread = threads[i]
-    const messages = thread.getMessages()
-    const results = []
-    let body
-    thread.removeLabel(targetLabel)
-    for (const j in messages) {
-      body = messages[j].getPlainBody()
-      results.push(extract(body))
-    }
-    Logger.log(results.length)
-    if (results.length > 0) {
-      send(
-        thread.getFirstMessageSubject(),
-        results.join('\n\n'),
-        thread.getPermalink())
-    }
-    thread.addLabel(notifiedLabel)
+  if (threads <= 0) {
+    Logger.log('Aborting... The queue is empty.')
+    return
   }
+  const scriptProperties = PropertiesService.getScriptProperties()
+  const cookies = auth(
+    scriptProperties.getProperty('booklog.jp:username'),
+    scriptProperties.getProperty('booklog.jp:password'))
+  threads.forEach(thread => {
+    const asins = thread.getMessages().map(message => {
+      return extractAsins(message.getBody())
+    })
+    Logger.log(`[${thread.getFirstMessageSubject()}] ${asins}`)
+    register(cookies, flatten(asins))
+    thread
+      .removeLabel(targetLabel)
+      .addLabel(notifiedLabel)
+    if (threads.length > 1) {
+      // 10ms
+      Utilities.sleep(10)
+    }
+  })
   Logger.log('Done.')
 }
 
-/**
- * @param {GmailMessage} message
- * @returns {String} Tweet
- */
-const extract = (message) => {
-  return message
-    .split('┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛')
-    .pop()
-    .split('───────────────────────────────────')
-    .shift()
-    .trim()
+const flatten = (list) => {
+  return [].concat.apply([], list)
+}
+
+const extractAsins = (body) => {
+  const list = body.match(/dp%2F.{10}/g)
+  if (list === null) {
+    return []
+  }
+  return list.map(asin => {
+    return asin.slice(-10)
+  }).filter((v, i, a) => a.indexOf(v) === i)
 }
 
 /**
- * https://cloud.google.com/speech-to-text/docs/basics
- * https://developers.google.com/apps-script/reference/url-fetch/url-fetch-app
- * @param {String} subject
- * @param {String} body
- * @param {String} url
- * @returns {String} content in JSON
+ * @returns {[String]} Cookies
  */
-const send = (subject, body, url) => {
-  const data = JSON.stringify({
-    channel: '#mlit',
-    username: 'MLIT',
-    text: [`<${url}|${subject}>`, body].join('\n\n'),
-    icon_emoji: ':motorway:'
-  })
-  Logger.log(data)
-  try {
-    const response = UrlFetchApp.fetch(WEBHOOK_URL, {
-      method: 'POST',
-      payload: data,
-      muteHttpExceptions: true
-    })
-    Logger.log(response)
-    return response.getContentText()
-  } catch (e) {
-    Logger.log(e.message)
-    throw e
+const auth = (username, password) => {
+  const options = {
+    method: 'post',
+    followRedirects: false,
+    payload: {
+      'account': username,
+      'password': password
+    }
   }
+  Logger.log(options)
+  const response = UrlFetchApp.fetch('https://booklog.jp/login', options)
+  const headers = response.getAllHeaders()
+  if (typeof headers['Set-Cookie'] === 'undefined') {
+    throw new Error(`[username:${username}] Authentication failed`)
+  }
+  const cookies = typeof headers['Set-Cookie'] === 'string' ? [ headers['Set-Cookie'] ] : headers['Set-Cookie']
+  return cookies.map((cookie) => {
+    return cookie.split(';')[0]
+  })
+}
+
+const REGEXP_RESULT = /.*tc(?:pink|blue) t10M.*/g
+const REGEXP_TITLE = />(.*)</
+const register = (cookies, asins) => {
+  const options = {
+    method: 'post',
+    payload: {
+      'isbns': asins.join('\n'),
+      'category_id': '0', // No category
+      'status': '4' // Tsundoku
+    },
+    headers: {
+      'Cookie': cookies.join(';')
+    }
+  }
+
+  const response = UrlFetchApp.fetch('https://booklog.jp/input', options)
+  response.getContentText().match(REGEXP_RESULT).forEach(result => {
+    Logger.log(result.match(REGEXP_TITLE)[1])
+  })
+  return response
 }
