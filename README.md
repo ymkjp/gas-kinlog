@@ -1,6 +1,6 @@
 # gas-kinlog
 
-[![Build Status](https://travis-ci.org/announce/icac.svg?branch=master)](https://travis-ci.org/announce/icac)
+[![Build Status](https://travis-ci.org/announce/gas-kinlog.svg?branch=master)](https://travis-ci.org/announce/gas-kinlog)
 
 ## Prerequisite
 
