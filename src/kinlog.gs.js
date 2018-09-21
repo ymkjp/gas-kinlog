@@ -3,7 +3,7 @@
  */
 const LABEL_ENQ = '#GAS/kinlog-enq'
 const LABEL_DEQ = '#GAS/kinlog-deq'
-const MAX_QUEUE = 30
+const MAX_QUEUE = 10
 
 /**
  * Walk through the target emails
@@ -15,7 +15,7 @@ const main = () => {
   const notifiedLabel = GmailApp.getUserLabelByName(LABEL_DEQ)
   const threads = targetLabel.getThreads(0, MAX_QUEUE).reverse()
 
-  if (threads <= 0) {
+  if (threads < 1) {
     Logger.log('Aborting... The queue is empty.')
     return
   }
@@ -27,8 +27,10 @@ const main = () => {
     const asins = thread.getMessages().map(message => {
       return extractAsins(message.getBody())
     })
-    Logger.log(`[${thread.getFirstMessageSubject()}] ${asins}`)
-    register(cookies, flatten(asins))
+    Logger.log(`[${thread.getFirstMessageSubject()}] ASIN: ${asins.join()}`)
+    if (asins.length > 0) {
+      register(cookies, flatten(asins))
+    }
     thread
       .removeLabel(targetLabel)
       .addLabel(notifiedLabel)
@@ -44,6 +46,10 @@ const flatten = (list) => {
   return [].concat.apply([], list)
 }
 
+const isUnique = (v, i, a) => {
+  return a.indexOf(v) === i
+}
+
 const REGEXP_ASIN = /dp%2F.{10}/g
 const extractAsins = (body) => {
   const list = body.match(REGEXP_ASIN)
@@ -52,7 +58,7 @@ const extractAsins = (body) => {
   }
   return list.map(asin => {
     return asin.slice(-10)
-  }).filter((v, i, a) => a.indexOf(v) === i)
+  }).filter(isUnique)
 }
 
 /**
@@ -67,7 +73,7 @@ const auth = (username, password) => {
       'password': password
     }
   }
-  Logger.log(options)
+  Logger.log(`Logging in as ${username}`)
   const response = UrlFetchApp.fetch('https://booklog.jp/login', options)
   const headers = response.getAllHeaders()
   if (typeof headers['Set-Cookie'] === 'undefined') {
@@ -80,7 +86,7 @@ const auth = (username, password) => {
 }
 
 const REGEXP_RESULT = /.*tc(?:pink|blue) t10M.*/g
-const REGEXP_TITLE = />(.*)</
+const REGEXP_MESSAGE = />(.*)</
 const register = (cookies, asins) => {
   const options = {
     method: 'post',
@@ -95,8 +101,12 @@ const register = (cookies, asins) => {
   }
 
   const response = UrlFetchApp.fetch('https://booklog.jp/input', options)
-  response.getContentText().match(REGEXP_RESULT).forEach(result => {
-    Logger.log(result.match(REGEXP_TITLE)[1])
-  })
+  const result = response.getContentText().match(REGEXP_RESULT)
+  if (result !== null) {
+    result.forEach(result => {
+      const message = result.match(REGEXP_MESSAGE)
+      return message.hasOwnProperty(1) ? Logger.log(`${message[1]}: ${asins.join()}`) : null
+    })
+  }
   return response
 }
