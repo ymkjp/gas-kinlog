@@ -1,7 +1,10 @@
 # Project
 .*/
+/var/*.tsv
 /dist/*
 !/dist/.gitkeep
+/LocalStorage/*
+!/LocalStorage/.gitkeep
 
 # Logs
 logs
