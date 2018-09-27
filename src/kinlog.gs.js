@@ -50,10 +50,12 @@ const isUnique = (v, i, a) => {
   return a.indexOf(v) === i
 }
 
-const REGEXP_ASIN = /dp%2F.{10}/g
+const REGEXP_ASIN = /dp(:?%2F|\/)\w{10}/g
 const extractAsins = (body) => {
   const list = body.match(REGEXP_ASIN)
+  // Logger.debug(`list: ${list}`)
   if (list === null) {
+    Logger.log(`No ASIN found.`)
     return []
   }
   return list.map(asin => {
