@@ -18,8 +18,9 @@ const client = apa.createClient({
 
 // https://docs.aws.amazon.com/ja_jp/AWSECommerceService/latest/DG/LocaleJP.html
 // https://docs.aws.amazon.com/AWSECommerceService/latest/DG/PerformingMultipleItemLookupsinOneRequest.html
+// @todo Try one by one, and support retry
 const MAX_ITEMS = 10
-const REQUEST_PER_MS = 20 * 1000
+const REQUEST_PER_MS = 10 * 1000
 const COMMON_PARAMS = {
   'domain': 'webservices.amazon.co.jp'
 }
@@ -32,7 +33,15 @@ const KNOWN_INVALID_IDS = [
   'B009DBB9UC',
   'B0032244N2',
   'B00024CKTS',
-  'B005DPEZ4Y'
+  'B005DPEZ4Y',
+  'B00J2L7B8M',
+  'B013FKFICG',
+  'B004Y9J1TO',
+  'B00PGIPZJC',
+  'B000OQ20HQ',
+  'B009E1QWPI',
+  'B013U094TY',
+  'B00X5M67YI'
 ]
 const TARGET_CATEGORIES = ['Book', 'eBooks']
 const extractTargetAsin = async (urlList) => {
