@@ -7,7 +7,7 @@ const _ = require('lodash')
 const objectPath = require('object-path')
 const apa = require('amazon-product-api')
 const util = require('util')
-const localStorage = require('./local-storage')
+const Storage = require('./storage')
 const Blacklist = require('./blacklist')
 const sleep = util.promisify(setTimeout)
 
@@ -31,6 +31,7 @@ class Amazon {
       awsSecret: process.env.PA_SECRET_KEY || ''
     })
     this.blacklist = new Blacklist()
+    this.storage = new Storage()
   }
 
   async extractTargetAsin (urlList) {
@@ -59,7 +60,7 @@ class Amazon {
     return _.compact(asinList)
   }
 
-  async fetch (itemIds, waitFor) {
+  async fetch (itemIds, waitFor = 0) {
     const payload = {
       ...COMMON_PARAMS,
       'Condition': 'All',
@@ -67,13 +68,13 @@ class Amazon {
       'ItemId': itemIds.join()
     }
     // console.debug('payload:', payload)
-    const cache = localStorage.retrieveData(payload)
+    const cache = this.storage.retrieveData(payload)
     if (cache !== null) {
       return cache
     }
     try {
       const response = await this.client.itemLookup(payload)
-      localStorage.storeData(payload, response)
+      this.storage.storeData(payload, response)
       if (waitFor > 0) {
         console.log(`Sleeping for ${waitFor}ms ...`)
         await sleep(waitFor)
@@ -90,19 +91,19 @@ class Amazon {
   }
 
   static extractTargetAttributes (result) {
-    console.debug('result:', result)
+    // console.debug('result:', result)
     const item = objectPath(result)
     const itemId = item.get('ASIN', []).shift() || ''
     const itemAttributes = item.get('ItemAttributes', []).shift()
-    console.debug('itemAttributes:', itemAttributes)
+    // console.debug('itemAttributes:', itemAttributes)
     const ia = objectPath(itemAttributes)
     const isAdultProduct = ia.get('IsAdultProduct', []).shift() || ''
     const category = ia.get('ProductGroup', []).shift() || ''
-    console.debug(JSON.stringify({
-      itemId: itemId,
-      isAdultProduct: isAdultProduct,
-      category: category
-    }), !!itemId, !parseInt(isAdultProduct, 10), TARGET_CATEGORIES.includes(category))
+    // console.debug(JSON.stringify({
+    //   itemId: itemId,
+    //   isAdultProduct: isAdultProduct,
+    //   category: category
+    // }), !!itemId, !parseInt(isAdultProduct, 10), TARGET_CATEGORIES.includes(category))
     return (
       !!itemId &&
       !parseInt(isAdultProduct, 10) &&

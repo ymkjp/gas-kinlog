@@ -1,20 +1,24 @@
 // @flow
 const _ = require('lodash')
 const objectPath = require('object-path')
-const localStorage = require('./local-storage')
+const Storage = require('./storage')
 
 const KEY_INVALID_ITEM = '__BLACKLIST_ITEMS'
-const AVOIDABLE_ERRORS = ['AWS.ECommerceService.ItemNotAccessible']
+const AVOIDABLE_ERRORS = [
+  'AWS.ECommerceService.ItemNotAccessible',
+  'AWS.InvalidParameterValue'
+]
 
 class Blacklist {
   constructor () {
-    this.blacklist = localStorage.retrieveData(KEY_INVALID_ITEM) || []
+    this.storage = new Storage()
+    this.blacklist = this.storage.retrieveData(KEY_INVALID_ITEM) || []
   }
 
   add (itemId) {
     console.debug('Registering to blacklist:', {itemId: itemId})
     this.blacklist.push(itemId)
-    return localStorage.storeData(KEY_INVALID_ITEM, this.blacklist)
+    return this.storage.storeData(KEY_INVALID_ITEM, this.blacklist)
   }
 
   isListed (itemId) {

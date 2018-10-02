@@ -3,6 +3,7 @@
  * https://booklog.jp/input
  */
 
+const os = require('os')
 const _ = require('lodash')
 const $ = require('cheerio')
 const qs = require('qs')
@@ -90,9 +91,15 @@ class Booklog {
     const result = []
     for (let i = 0; i < Math.ceil(asinList.length / MAX_ENTRIES); ++i) {
       const s = i * MAX_ENTRIES
-      result.push(asinList.slice(s, s + MAX_ENTRIES + 1).join('\n'))
+      const list = asinList.slice(s, s + MAX_ENTRIES)
+      // console.debug('output:', {
+      //   i: i,
+      //   s: s,
+      //   'list.length': list.length
+      // })
+      result.push(list.join(os.EOL))
     }
-    return result.join('\n')
+    return result
   }
 }
 

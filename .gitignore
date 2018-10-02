@@ -5,6 +5,8 @@
 !/dist/.gitkeep
 /LocalStorage/*
 !/LocalStorage/.gitkeep
+/Bookshelf/*
+!/Bookshelf/.gitkeep
 
 # Logs
 logs
