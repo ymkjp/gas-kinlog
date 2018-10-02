@@ -18,9 +18,8 @@ const client = apa.createClient({
 
 // https://docs.aws.amazon.com/ja_jp/AWSECommerceService/latest/DG/LocaleJP.html
 // https://docs.aws.amazon.com/AWSECommerceService/latest/DG/PerformingMultipleItemLookupsinOneRequest.html
-// @todo Try one by one, and support retry
-const MAX_ITEMS = 10
-const REQUEST_PER_MS = 10 * 1000
+const MAX_ITEMS = 1
+const REQUEST_PER_MS = 2 * 1000
 const COMMON_PARAMS = {
   'domain': 'webservices.amazon.co.jp'
 }
@@ -78,6 +77,9 @@ const fetch = async (itemIds, waitFor) => {
   if (cache !== null) {
     return cache
   }
+  if (_.some(itemIds, isBlacklisted)) {
+    return new Error(JSON.stringify({message: 'Some of items are blacklisted', itemIds: itemIds}))
+  }
   try {
     const response = await client.itemLookup(payload)
     localStorage.storeData(payload, response)
@@ -86,11 +88,54 @@ const fetch = async (itemIds, waitFor) => {
       await sleep(waitFor)
     }
     return response
-  } catch (e) {
-    console.error(JSON.stringify(e))
-    return new Error(JSON.stringify(e))
+  } catch (error) {
+    const detail = JSON.stringify({error: error, itemIds: itemIds})
+    console.error(detail)
+    // if (isRetriable(error)) {
+    //   console.log(`Retrying the request. Remaining retry budget is ${retry} times.`, detail)
+    //   await sleep(2 * waitFor)
+    //   const result = fetch(itemIds, waitFor, --retry)
+    //   console.debug({result: result, ...detail})
+    //   return result
+    // }
+    if (itemIds.length === 1 && isAvoidableItem(error)) {
+      blacklist(itemIds.pop())
+    }
+    return new Error(detail)
   }
 }
+
+const KEY_INVALID_ITEM = '__BLACKLIST_ITEMS'
+const blacklist = (itemId) => {
+  console.debug('Registering to blacklist:', {itemId: itemId})
+  const blacklist = localStorage.retrieveData(KEY_INVALID_ITEM) || []
+  blacklist.push(itemId)
+  return localStorage.storeData(KEY_INVALID_ITEM, blacklist)
+}
+
+const isBlacklisted = (itemId) => {
+  const blacklist = localStorage.retrieveData(KEY_INVALID_ITEM) || []
+  return blacklist.includes(itemId)
+}
+
+const AVOIDALE_ERRORS = ['AWS.ECommerceService.ItemNotAccessible']
+const isAvoidableItem = (error) => {
+  // [{"Error":[{"Code":["AWS.ECommerceService.ItemNotAccessible"], ...
+  if (!(_.isArray(error) && error.length > 0)) {
+    return false
+  }
+  const e = objectPath(error.shift()).get('Error', []).shift() || {}
+  const code = objectPath(e).get('Code', []).shift() || ''
+  return AVOIDALE_ERRORS.includes(code)
+}
+
+// const RETRIABLE_ERRORS = ['RequestThrottled']
+// const isRetriable = (error) => {
+// //   // "Error":[{"Code":["RequestThrottled"], ...
+// //   const e = objectPath(error).get('Error', []).shift() || {}
+// //   const code = objectPath(e).get('Code', []).shift() || ''
+// //   return RETRIABLE_ERRORS.includes(code)
+// // }
 
 const extractTargetAttributes = (result) => {
   console.debug('result:', result)

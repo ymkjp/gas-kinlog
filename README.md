@@ -14,6 +14,7 @@
 Run the command below:
 
 ```bash
+export PA_ACCESS_KEY="" PA_SECRET_KEY="" PA_ASSOCIATE_TAG=""
 yarn start
 ```
 
